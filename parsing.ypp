@@ -1,0 +1,144 @@
+%{
+    #include <stdio.h>
+    #include <errno.h>
+    #include <stdlib.h>
+    #include <string.h>
+    #include <iostream>
+    #include "gameModule.h"
+    #include "parsing.tab.h"
+    Game *M1;
+    Game *M;
+    extern FILE *yyin;
+    extern int yyparse();
+    extern int yylex();
+    extern int yywrap();
+    int yywrap()
+    {
+        fclose(yyin);
+        return 1;
+    }
+    void yyerror(const char *Str)
+    {
+        fprintf(stderr,"Error: %s\n",Str);
+    }
+%}
+
+%union
+{
+    char *str;
+    int  num;
+}
+
+%token Currency StartingMoney Model JailFine Location Route Cost Rent Tax LocationID GroupID
+%token <str>  Name
+%token <num>  Int
+%start expression
+
+%%
+
+expression :{
+				;
+                printf("*\n");
+            }
+            | expression Currency Name ';'
+            {
+				printf("CURRENCY\n");
+                M1->currency=$3;
+            }
+            | expression StartingMoney Int ';'
+            {
+                printf("STARTING MONEY\n");
+                M1->startingMoney=$3;
+            }
+            | expression JailFine Int ';'
+            {
+                printf("JAIL FINE\n");
+                M1->jailFine=$3;
+            }
+            | expression Model LocationID Int Name ';'
+            {
+                printf("MODEL\n");
+                int ind=0;
+                for(int i=0;i<M1->cityList.size();i++)
+                    if(M1->cityList[i]->locationID==$4)
+                        ind=i;
+                M1->cityList[ind]->objName=$5;
+            }
+            | expression Tax Int Int ';'
+            {
+                printf("TAX\n");
+                M1->taxPercent=$3;
+                M1->taxAlternate=$4;
+            }
+            | expression Location LocationID Int Name GroupID Int ';'
+            {
+                printf("LOCATION\n");
+                cityData *cD=new cityData;
+                cD->locationID=$4;
+                cD->cityName=$5;
+                cD->groupID=$7;
+                M1->cityList.push_back(cD);
+            }
+            | expression Route LocationID Int LocationID Int ';'
+            {
+                printf("ROUTE\n");
+                M1->graph[$4][$6]=true;
+            }
+            | expression Cost LocationID Int Int Int Int Int Int Int Int ';'
+            {
+                printf("COST\n");
+                int ind=0;
+                for(int i=0;i<M1->cityList.size();i++)
+                    if(M1->cityList[i]->locationID==$4)
+                    ind=i;
+                M1->cityList[ind]->cityCost=$5;
+                M1->cityList[ind]->mortgageValue=$6;
+                M1->cityList[ind]->houseCost[0]=$7;
+                M1->cityList[ind]->houseCost[1]=$8;
+                M1->cityList[ind]->houseCost[2]=$9;
+                M1->cityList[ind]->houseCost[3]=$10;
+                M1->cityList[ind]->houseCost[4]=$11;
+            }
+            | expression Rent LocationID Int Int Int Int Int Int Int ';'
+            {
+                printf("RENT\n");
+                int ind=0;
+                for(int i=0;i<M1->cityList.size();i++)
+                    if(M1->cityList[i]->locationID==$4)
+                        ind=i;
+                M1->cityList[ind]->rent[0]=$5;
+                M1->cityList[ind]->rent[1]=$6;
+                M1->cityList[ind]->rent[2]=$7;
+                M1->cityList[ind]->rent[3]=$8;
+                M1->cityList[ind]->rent[4]=$9;
+                M1->cityList[ind]->rent[5]=$10;
+            }
+            | expression ';'
+            {
+                ;
+                printf(";\n");
+            }
+%%
+
+int main()
+{
+    char fn[128];
+    printf("Configuration file name = ");
+    scanf("%s",fn);
+    FILE *myfile = fopen(fn,"r");
+    M1=new Game;
+    M=M1;
+    if (!myfile)
+    {
+        printf("Configuration File Not Found!\n");
+        return -1;
+    }
+    
+    yyin = myfile;
+    yyparse();
+    
+    /*do
+     {
+        yyparse();
+     }while (!feof(yyin));*/
+}
