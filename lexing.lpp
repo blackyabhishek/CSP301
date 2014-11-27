@@ -1,0 +1,27 @@
+%{
+    #include "parsing.tab.h"
+%}
+
+digit [0-9]
+letter [a-zA-Z_ \.\/]
+
+%%
+
+^\#[^\n]* {;}
+^Currency {return Currency;}
+^StartingMoney {return StartingMoney;}
+^JailFine {return JailFine;}
+^model {return Model;}
+^Tax {return Tax;}
+^location {return Location;}
+^route {return Route;}
+^cost {return Cost;}
+^rent {return Rent;}
+"@l" {return LocationID;}
+"@g" {return GroupID;}
+{digit}+ {yylval.num=atoi(yytext); return Int;}
+" "{letter}+ {yylval.str=strdup(yytext); return Name;}
+\n {return ';';}
+. {;}
+
+%%
